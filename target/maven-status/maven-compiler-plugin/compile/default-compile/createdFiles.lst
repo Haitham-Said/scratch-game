@@ -1,0 +1,9 @@
+com/scratchgame/App.class
+com/scratchgame/model/StandardSymbol.class
+com/scratchgame/model/WinCombination.class
+com/scratchgame/service/GameService.class
+com/scratchgame/model/Symbol.class
+com/scratchgame/utils/ParserUtil.class
+com/scratchgame/model/Configuration.class
+com/scratchgame/model/BonusSymbol.class
+com/scratchgame/model/Probabilities.class
