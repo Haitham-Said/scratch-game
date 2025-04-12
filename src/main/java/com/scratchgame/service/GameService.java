@@ -83,25 +83,23 @@ public class GameService {
     }
 
 
-    public Double calculateOutcome(Configuration config, Map<String, Integer> countSymbolMap, Integer betAmount,String bonusSymbol) {
+    public Double calculateOutcome(Configuration config, List<List<String>> matrix, Integer betAmount, String bonusSymbol, Map<String, Integer> countSymbolMap) {
         Double finalReward = 0.0;
-        Map<String,WinCombination> winCombinationMap=new HashMap<>();
-        for(Map.Entry<String,Integer> entry:countSymbolMap.entrySet()){
-            if(entry.getValue()>=3){
-                for (Map.Entry<String, WinCombination> winCombinationEntry:config.getWin_combinations().entrySet()){
-                    if(winCombinationEntry.getValue().getCount()!=null&&winCombinationEntry.getValue().getCount().equals(entry.getValue())){
-                        winCombinationMap.put(entry.getKey(),winCombinationEntry.getValue());
-                    }
-                }
-            }
 
-        }
-        for (Map.Entry<String,WinCombination> winCombinationEntry:winCombinationMap.entrySet()){
-            Double reward_multiplier=config.getSymbols().get(winCombinationEntry.getKey()).getReward_multiplier();
-            finalReward +=reward_multiplier*winCombinationEntry.getValue().getReward_multiplier();
+        Map<String, Set<String>> winningSymbols = getWinningSymbolsFromPatterns(matrix);
+        Map<String, WinCombination> winCombinationMap = new HashMap<>();
 
-        }
-       finalReward =finalReward* betAmount;
+        finalReward = calculatePatternReward(config, betAmount, winningSymbols, finalReward);
+
+
+        finalReward = calculateCountReward(config, betAmount, countSymbolMap, winCombinationMap, finalReward);
+
+        finalReward = applyBonus(config, bonusSymbol, finalReward);
+
+        return finalReward;
+    }
+
+    private static Double applyBonus(Configuration config, String bonusSymbol, Double finalReward) {
         if (bonusSymbol != null && config.getSymbols().containsKey(bonusSymbol)) {
             Symbol bonus = config.getSymbols().get(bonusSymbol);
             switch (bonus.getImpact()) {
@@ -115,7 +113,81 @@ public class GameService {
                     break;
             }
         }
-
         return finalReward;
     }
+
+    private static Double calculateCountReward(Configuration config, Integer betAmount, Map<String, Integer> countSymbolMap, Map<String, WinCombination> winCombinationMap, Double finalReward) {
+        for(Map.Entry<String,Integer> entry: countSymbolMap.entrySet()){
+            if(entry.getValue()>=3){
+                for (Map.Entry<String, WinCombination> winCombinationEntry: config.getWin_combinations().entrySet()){
+                    if(winCombinationEntry.getValue().getCount()!=null&&winCombinationEntry.getValue().getCount().equals(entry.getValue())){
+                        winCombinationMap.put(entry.getKey(),winCombinationEntry.getValue());
+                    }
+                }
+            }
+
+        }
+        for (Map.Entry<String,WinCombination> winCombinationEntry: winCombinationMap.entrySet()){
+            Double reward_multiplier= config.getSymbols().get(winCombinationEntry.getKey()).getReward_multiplier();
+            finalReward += betAmount *reward_multiplier*winCombinationEntry.getValue().getReward_multiplier();
+
+        }
+        return finalReward;
+    }
+
+    private static Double calculatePatternReward(Configuration config, Integer betAmount, Map<String, Set<String>> winningSymbols, Double finalReward) {
+        for (Map.Entry<String, Set<String>> entry : winningSymbols.entrySet()) {
+            for (String winningPattern : entry.getValue()){
+                for (Map.Entry<String, WinCombination> winEntry : config.getWin_combinations().entrySet()) {
+                    if (winEntry.getKey().equals(winningPattern)) {
+                        WinCombination winCombo = winEntry.getValue();
+                            finalReward += betAmount * config.getSymbols().get(entry.getKey()).getReward_multiplier();
+                    }
+                }
+        }
+        }
+        return finalReward;
+    }
+
+    public Map<String, Set<String>> getWinningSymbolsFromPatterns(List<List<String>> matrix) {
+        Map<String, Set<String>> winningSymbols = new HashMap<>();
+        int rows = matrix.size();
+        int cols = matrix.get(0).size();
+
+
+        checkHorizontalPattern(matrix, rows, cols, winningSymbols);
+
+
+//        checkVerticalPattern(matrix, rows, cols, winningSymbols);
+
+
+
+        return winningSymbols;
+    }
+
+    private void checkHorizontalPattern(List<List<String>> matrix, int rows, int cols, Map<String, Set<String>> winningSymbols) {
+        int matchCount=matrix.get(0).size();
+        for (int i = 0; i < rows; i++) {
+            int count=1;
+            for (int j = 1; j < cols; j++) {
+                if(matrix.get(i).get(j).equals(matrix.get(i).get(j-1))){
+                    if (count>=matchCount){
+                        winningSymbols.computeIfAbsent(matrix.get(i).get(j),k->new HashSet<>())
+                                .add("horizontal");
+                    }
+                }else {
+                    count=1;
+                }
+            }
+        }
+    }
+
+    private void checkVerticalPattern(List<List<String>> matrix, int rows, int cols, Map<String, Set<String>> winningSymbols){
+
+    }
+
 }
+
+
+
+
