@@ -139,9 +139,9 @@ public class GameService {
         for (Map.Entry<String, Set<String>> entry : winningSymbols.entrySet()) {
             for (String winningPattern : entry.getValue()){
                 for (Map.Entry<String, WinCombination> winEntry : config.getWin_combinations().entrySet()) {
-                    if (winEntry.getKey().equals(winningPattern)) {
+                    if (winEntry.getValue().getGroup().equals(winningPattern)) {
                         WinCombination winCombo = winEntry.getValue();
-                            finalReward += betAmount * config.getSymbols().get(entry.getKey()).getReward_multiplier();
+                            finalReward += betAmount * config.getSymbols().get(entry.getKey()).getReward_multiplier()*winCombo.getReward_multiplier();
                     }
                 }
         }
@@ -173,7 +173,7 @@ public class GameService {
                 if(matrix.get(i).get(j).equals(matrix.get(i).get(j-1))){
                     if (count>=matchCount){
                         winningSymbols.computeIfAbsent(matrix.get(i).get(j),k->new HashSet<>())
-                                .add("horizontal");
+                                .add("horizontally_linear_symbols");
                     }
                 }else {
                     count=1;
