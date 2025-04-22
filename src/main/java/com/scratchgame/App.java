@@ -49,9 +49,10 @@ public class App {
         }
         GameService gameService = new GameService();
         List<List<String>> matrix = gameService.generateMatrix(configuration.getProbabilities(), configuration.getRows(), configuration.getColumns());
-        Map<String, Integer> countSymbolMap = gameService.countSymbol(matrix);
         String bonusSymbol = gameService.insertBonusSymbol(configuration.getProbabilities().getBonus_symbols().getSymbols(), matrix);
-        Double outCome = gameService.calculateOutcome(configuration, matrix, betAmount, bonusSymbol,countSymbolMap);
+
+
+        Double outCome = gameService.calculateOutcome(configuration, matrix, betAmount, bonusSymbol);
 
         System.out.println(outCome);
     }

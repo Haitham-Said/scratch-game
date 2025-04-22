@@ -58,41 +58,41 @@ public class GameService {
 
 
     private static String selectRandomSymbol(List<StandardSymbol> standardSymbols, Integer row, Integer column) {
-
-        Map<String, Integer> symbolProbabilities = standardSymbols.stream()
-                .filter(standardSymbol -> standardSymbol.getRow().equals(row) && standardSymbol.getColumn().equals(column))
+        Map<String,Integer> map=standardSymbols.stream()
+                .filter(standardSymbol -> standardSymbol.getRow().equals(row)&&standardSymbol.getColumn().equals(column))
                 .findFirst()
-                .orElseGet(() -> standardSymbols.stream()
-                        .filter(s -> s.getRow() == 0 && s.getColumn() == 0)
+                .orElseGet(()->standardSymbols.stream()
+                        .filter(standardSymbol -> standardSymbol.getRow()==0&&standardSymbol.getColumn()==0)
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("No default standard symbol found")))
-                .getSymbols();
-
-        int totalPrb = symbolProbabilities.values().stream().mapToInt(Integer::intValue).sum();
-        int randomValue = new Random().nextInt(totalPrb);
-        int prbValue = 0;
-
-        for (Map.Entry<String, Integer> entry : symbolProbabilities.entrySet()) {
-            prbValue += entry.getValue();
-            if (prbValue > randomValue) {
+                        .orElseThrow(()->new RuntimeException("no default symbol found"))
+                )
+                        .getSymbols();
+        Integer totalProbabilities=map.values().stream().mapToInt(Integer::intValue).sum();
+        int random=new Random().nextInt(totalProbabilities);
+        Integer prbValue=0;
+        for (Map.Entry<String,Integer> entry:map.entrySet()){
+            prbValue+=entry.getValue();
+            if(prbValue>=random) {
                 return entry.getKey();
             }
         }
-
         return null;
+
     }
 
 
-    public Double calculateOutcome(Configuration config, List<List<String>> matrix, Integer betAmount, String bonusSymbol, Map<String, Integer> countSymbolMap) {
+    public Double calculateOutcome(Configuration config, List<List<String>> matrix, Integer betAmount, String bonusSymbol) {
+
         Double finalReward = 0.0;
 
+        Map<String, Integer> countSymbolMap = countSymbol(matrix);
         Map<String, Set<String>> winningSymbols = getWinningSymbolsFromPatterns(matrix);
-        Map<String, WinCombination> winCombinationMap = new HashMap<>();
+
 
         finalReward = calculatePatternReward(config, betAmount, winningSymbols, finalReward);
 
 
-        finalReward = calculateCountReward(config, betAmount, countSymbolMap, winCombinationMap, finalReward);
+        finalReward = calculateCountReward(config, betAmount, countSymbolMap, finalReward);
 
         finalReward = applyBonus(config, bonusSymbol, finalReward);
 
@@ -100,7 +100,7 @@ public class GameService {
     }
 
     private static Double applyBonus(Configuration config, String bonusSymbol, Double finalReward) {
-        if (bonusSymbol != null && config.getSymbols().containsKey(bonusSymbol)) {
+        if (bonusSymbol != null && config.getSymbols().containsKey(bonusSymbol)&&finalReward>0) {
             Symbol bonus = config.getSymbols().get(bonusSymbol);
             switch (bonus.getImpact()) {
                 case "multiply_reward":
@@ -116,7 +116,8 @@ public class GameService {
         return finalReward;
     }
 
-    private static Double calculateCountReward(Configuration config, Integer betAmount, Map<String, Integer> countSymbolMap, Map<String, WinCombination> winCombinationMap, Double finalReward) {
+    private static Double calculateCountReward(Configuration config, Integer betAmount, Map<String, Integer> countSymbolMap, Double finalReward) {
+        Map<String, WinCombination> winCombinationMap = new HashMap<>();
         for(Map.Entry<String,Integer> entry: countSymbolMap.entrySet()){
             if(entry.getValue()>=3){
                 for (Map.Entry<String, WinCombination> winCombinationEntry: config.getWin_combinations().entrySet()){
@@ -175,8 +176,6 @@ public class GameService {
                         winningSymbols.computeIfAbsent(matrix.get(i).get(j),k->new HashSet<>())
                                 .add("horizontally_linear_symbols");
                     }
-                }else {
-                    count=1;
                 }
             }
         }
